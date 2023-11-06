@@ -17,6 +17,8 @@ use Hyperf\Contract\ApplicationInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Coordinator\Timer;
 use Hyperf\Crontab\Crontab;
+use Hyperf\Crontab\Event\AfterExecute;
+use Hyperf\Crontab\Event\BeforeExecute;
 use Hyperf\Crontab\Event\FailToExecute;
 use Hyperf\Crontab\Exception\InvalidArgumentException;
 use Hyperf\Crontab\LoggerInterface;
@@ -67,6 +69,9 @@ class Executor
             $runnable = null;
 
             switch ($crontab->getType()) {
+                case 'closure':
+                    $runnable = $crontab->getCallback();
+                    break;
                 case 'callback':
                     [$class, $method] = $crontab->getCallback();
                     $parameters = $crontab->getCallback()[2] ?? null;
@@ -186,8 +191,10 @@ class Executor
     {
         return function () use ($crontab, $runnable) {
             try {
+                $this->dispatcher?->dispatch(new BeforeExecute($crontab));
                 $result = true;
                 $runnable();
+                $this->dispatcher?->dispatch(new AfterExecute($crontab));
             } catch (Throwable $throwable) {
                 $result = false;
                 $this->dispatcher?->dispatch(new FailToExecute($crontab, $throwable));

@@ -121,8 +121,13 @@ class Producer
                     }
                     try {
                         $closure->call($this);
-                    } catch (\Throwable) {
+                    } catch (Throwable $e) {
                         $this->producer->close();
+
+                        $callback = $this->getConfig()->getExceptionCallback();
+                        if ($callback) {
+                            $callback($e);
+                        }
                         break;
                     }
                 }
@@ -158,6 +163,7 @@ class Producer
         $producerConfig->setAutoCreateTopic($config['auto_create_topic']);
         ! empty($config['sasl']) && $producerConfig->setSasl($config['sasl']);
         ! empty($config['ssl']) && $producerConfig->setSsl($config['ssl']);
+        is_callable($config['exception_callback'] ?? null) && $producerConfig->setExceptionCallback($config['exception_callback']);
         return new LongLangProducer($producerConfig);
     }
 }

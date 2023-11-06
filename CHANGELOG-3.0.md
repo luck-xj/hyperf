@@ -1,10 +1,57 @@
-# v3.0.39 - TBD
+# v3.0.43 - TBD
+
+# v3.0.42 - 2023-11-03
+
+## Added
+
+- [#6236](https://github.com/hyperf/hyperf/pull/6236) Support unionType param for GenerateModelIDEVisitor.
+- [#6246](https://github.com/hyperf/hyperf/pull/6246) [#6252](https://github.com/hyperf/hyperf/pull/6252) Added crontab lifecycle events.
+- [#6249](https://github.com/hyperf/hyperf/pull/6249) Support crontab closure type.
+
+## Optimized
+
+- [#6239](https://github.com/hyperf/hyperf/pull/6239) Improve amqp, use methods instead of `$delivery_info` and optimize `BeforeConsume` event.
+- [#6250](https://github.com/hyperf/hyperf/pull/6250) Enhance scopeDoc for generateModelIdeVisitor.
+- [#6253](https://github.com/hyperf/hyperf/pull/6253) Print error logs when collecting class reflections failed.
+- [#6256](https://github.com/hyperf/hyperf/pull/6256) Refactor `hyperf/translation` classes to use typed properties.
+
+# v3.0.41 - 2023-10-27
+
+## Added
+
+- [#6224](https://github.com/hyperf/hyperf/pull/6224) Added charset param and html method for Response.
+- [#6232](https://github.com/hyperf/hyperf/pull/6232) Added `isNotFound` method for Dispatched.
+- [#6233](https://github.com/hyperf/hyperf/pull/6233) Improved `AfterExecute` event of `hyperf/command`.
+
+## Optimized
+
+- [#6226](https://github.com/hyperf/hyperf/pull/6226) Don't send response when the connection of grpc server has been closed.
+- [#6228](https://github.com/hyperf/hyperf/pull/6228) [#6229](https://github.com/hyperf/hyperf/pull/6229)  Make rules method in FormRequest optional.
+
+# v3.0.40 - 2023-10-20
+
+## Added
+
+- [#6220](https://github.com/hyperf/hyperf/pull/6220) Added `Hyperf\Stringable\Str::replaceMatches()`.
+
+## Fixed
+
+- [#6217](https://github.com/hyperf/hyperf/pull/6217) Fixed bug that `Str::replaceLast` with empty search cannot work as expected.
+
+## Optimized
+
+- [#6209](https://github.com/hyperf/hyperf/pull/6209) Support for phpredis 6.x [sentinel](https://github.com/phpredis/phpredis/blob/develop/sentinel.md#examples-for-version-60-or-later)
+
+# v3.0.39 - 2023-10-13
 
 ## Added
 
 - [#6188](https://github.com/hyperf/hyperf/pull/6188) Added Redis options name to support string type.
 - [#6193](https://github.com/hyperf/hyperf/pull/6193) Support http and websocket protocols at the same port for swow server.
 - [#6198](https://github.com/hyperf/hyperf/pull/6198) Added `RpcAspect` and use it instead of `JsonRpcAspect`.
+- [#6200](https://github.com/hyperf/hyperf/pull/6200) Added switch for `ElasticserachAspect` and `CoroutineAspect`.
+- [#6203](https://github.com/hyperf/hyperf/pull/6203) Added `Hyperf\Tracer\Aspect\GrpcAspect`.
+- [#6207](https://github.com/hyperf/hyperf/pull/6207) Added `exception_callback` option for `hyperf/kafka`.
 
 # v3.0.38 - 2023-10-05
 
