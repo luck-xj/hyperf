@@ -11,12 +11,13 @@ declare(strict_types=1);
  */
 namespace HyperfTest\Support;
 
+use HyperfTest\Support\Exception\RetryException;
 use HyperfTest\Support\Stub\Bar;
 use HyperfTest\Support\Stub\Foo;
+use HyperfTest\Support\Stub\FooClosure;
 use HyperfTest\Support\Stub\Traits\BarTrait;
 use HyperfTest\Support\Stub\Traits\FooTrait;
-use HyperfTest\Utils\Exception\RetryException;
-use HyperfTest\Utils\Stub\FooClosure;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
 use function Hyperf\Support\call;
@@ -26,6 +27,11 @@ use function Hyperf\Support\retry;
 use function Hyperf\Support\swoole_hook_flags;
 use function Hyperf\Support\value;
 
+/**
+ * @internal
+ * @coversNothing
+ */
+#[CoversNothing]
 /**
  * @internal
  * @coversNothing
@@ -43,7 +49,7 @@ class FunctionTest extends TestCase
 
     public function testRetry()
     {
-        $this->expectException(\HyperfTest\Utils\Exception\RetryException::class);
+        $this->expectException(RetryException::class);
         $result = 0;
         try {
             retry(2, function () use (&$result) {
@@ -57,7 +63,7 @@ class FunctionTest extends TestCase
 
     public function testOneTimesRetry()
     {
-        $this->expectException(\HyperfTest\Utils\Exception\RetryException::class);
+        $this->expectException(RetryException::class);
 
         $result = 0;
         try {
@@ -72,7 +78,7 @@ class FunctionTest extends TestCase
 
     public function testRetryErrorTimes()
     {
-        $this->expectException(\HyperfTest\Utils\Exception\RetryException::class);
+        $this->expectException(RetryException::class);
 
         $result = 0;
         try {
@@ -87,7 +93,7 @@ class FunctionTest extends TestCase
 
     public function testRetryWithAttempts()
     {
-        $this->expectException(\HyperfTest\Utils\Exception\RetryException::class);
+        $this->expectException(RetryException::class);
 
         $asserts = [1, 2, 3];
         retry(2, function ($attempts) use (&$asserts) {
