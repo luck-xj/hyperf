@@ -1,4 +1,33 @@
-# v3.1.4 - TBD
+# v3.1.6 - TBD
+
+# v3.1.5 - 2024-01-04
+
+## Fixed
+
+- [#6423](https://github.com/hyperf/hyperf/pull/6423) Fixed bug that the timezone of crontab task cannot work.
+- [#6436](https://github.com/hyperf/hyperf/pull/6436) Fixed bug that the generator which be used to generate amqp consumer cannot work.
+
+## Added
+
+- [#6431](https://github.com/hyperf/hyperf/pull/6431) Added `UnsetContextInTaskWorkerListener` which can be used to unset connection context when using non-coroutine task worker.
+
+## Optimized
+
+- [#6435](https://github.com/hyperf/hyperf/pull/6435) [#6437](https://github.com/hyperf/hyperf/pull/6437) Optimized model generator which can generate property comments with `use`.
+
+# v3.1.4 - 2023-12-29
+
+## Fixed
+
+- [#6419](https://github.com/hyperf/hyperf/pull/6419) Fixed bug that `prepareHandler` cannot work sometimes for `circuit-breaker`.
+
+## Added
+
+- [#6426](https://github.com/hyperf/hyperf/pull/6426) Added Annotation `RewriteReturnType` which used to rewrite the return type when generating models.
+
+## Optimized
+
+- [#6415](https://github.com/hyperf/hyperf/pull/6415) Throw `InvalidArgumentException` instead of `TypeError` for decoding an empty string when using `Base62::decode`.
 
 # v3.1.3 - 2023-12-21
 
