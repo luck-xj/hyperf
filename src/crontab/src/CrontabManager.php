@@ -31,6 +31,9 @@ class CrontabManager
         return true;
     }
 
+    /**
+     * @return Crontab[]
+     */
     public function parse(): array
     {
         $result = [];
@@ -51,12 +54,15 @@ class CrontabManager
         return $result;
     }
 
+    /**
+     * @return array<string, Crontab>
+     */
     public function getCrontabs(): array
     {
         return $this->crontabs;
     }
 
-    private function isValidCrontab(Crontab $crontab): bool
+    public function isValidCrontab(Crontab $crontab): bool
     {
         return $crontab->getName() && $crontab->getRule() && $crontab->getCallback() && $this->parser->isValid($crontab->getRule());
     }

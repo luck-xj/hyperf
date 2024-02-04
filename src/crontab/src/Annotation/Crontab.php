@@ -33,6 +33,8 @@ class Crontab extends AbstractAnnotation
         public ?string $memo = null,
         public array|string|bool $enable = true,
         public ?string $timezone = null,
+        public array|string $environments = [],
+        public array $options = [],
     ) {
         if (! empty($this->rule)) {
             $this->rule = str_replace('\\', '', $this->rule);
