@@ -87,6 +87,9 @@ class TracerFactoryTest extends TestCase
                         'options' => [
                         ],
                     ],
+                    'noop' => [
+                        'driver' => \Hyperf\Tracer\Adapter\NoOpTracerFactory::class,
+                    ],
                 ],
             ],
         ]);
@@ -123,6 +126,9 @@ class TracerFactoryTest extends TestCase
                         'options' => [
                         ],
                     ],
+                    'noop' => [
+                        'driver' => \Hyperf\Tracer\Adapter\NoOpTracerFactory::class,
+                    ],
                 ],
             ],
         ]);
@@ -130,6 +136,45 @@ class TracerFactoryTest extends TestCase
         $factory = new TracerFactory();
 
         $this->assertInstanceOf(\Jaeger\Tracer::class, $factory($container));
+    }
+
+    public function testNoOpFactory()
+    {
+        $config = new Config([
+            'opentracing' => [
+                'default' => 'noop',
+                'enable' => [
+                ],
+                'tracer' => [
+                    'zipkin' => [
+                        'driver' => \Hyperf\Tracer\Adapter\ZipkinTracerFactory::class,
+                        'app' => [
+                            'name' => 'skeleton',
+                            // Hyperf will detect the system info automatically as the value if ipv4, ipv6, port is null
+                            'ipv4' => '127.0.0.1',
+                            'ipv6' => null,
+                            'port' => 9501,
+                        ],
+                        'options' => [
+                        ],
+                        'sampler' => BinarySampler::createAsAlwaysSample(),
+                    ],
+                    'jaeger' => [
+                        'driver' => \Hyperf\Tracer\Adapter\JaegerTracerFactory::class,
+                        'name' => 'skeleton',
+                        'options' => [
+                        ],
+                    ],
+                    'noop' => [
+                        'driver' => \Hyperf\Tracer\Adapter\NoOpTracerFactory::class,
+                    ],
+                ],
+            ],
+        ]);
+        $container = $this->getContainer($config);
+        $factory = new TracerFactory();
+
+        $this->assertInstanceOf(\OpenTracing\NoopTracer::class, $factory($container));
     }
 
     protected function getContainer($config)
@@ -146,6 +191,9 @@ class TracerFactoryTest extends TestCase
         $container->shouldReceive('get')
             ->with(\Hyperf\Tracer\Adapter\JaegerTracerFactory::class)
             ->andReturn(new \Hyperf\Tracer\Adapter\JaegerTracerFactory($config));
+        $container->shouldReceive('get')
+            ->with(\Hyperf\Tracer\Adapter\NoOpTracerFactory::class)
+            ->andReturn(new \Hyperf\Tracer\Adapter\NoOpTracerFactory());
         $container->shouldReceive('get')
             ->with(\Hyperf\Contract\ConfigInterface::class)
             ->andReturn($config);

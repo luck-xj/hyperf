@@ -1,4 +1,41 @@
-# v3.1.10 - TBD
+# v3.1.13 - TBD
+
+## Added
+
+- [#6576](https://github.com/hyperf/hyperf/pull/6576) Added `Hyperf\Stringable\Str::apa()` method.
+- [#6577](https://github.com/hyperf/hyperf/pull/6577) Support setup command traits before running.
+
+# v3.1.12 - 2024-03-07
+
+## Fixed
+
+- [#6569](https://github.com/hyperf/hyperf/pull/6569) Fixed bug that reading messages failed when the channel have been removed from channel group.
+- [#6561](https://github.com/hyperf/hyperf/pull/6561) Fixed bug that the relation comments cannot be created by `gen:model`.
+- [#6566](https://github.com/hyperf/hyperf/pull/6566) Fixed bug that the numeric keys will be reset when using `$request->all()`.
+- [#6567](https://github.com/hyperf/hyperf/pull/6567) Fixed bug that the `CrontabRegisterListener` don't check configuration `crontab.enable`.
+
+# v3.1.11 - 2024-03-01
+
+## Fixed
+
+- [#6555](https://github.com/hyperf/hyperf/pull/6555) Fixed bug that `invalidOperator` cannot work well when using non-string operators.
+- [#6563](https://github.com/hyperf/hyperf/pull/6563/files) Fixed cron dispatcher sleep accurate.
+
+## Added
+
+- [#6550](https://github.com/hyperf/hyperf/pull/6550) Added default config of noop driver for `hyperf/opentracing`.
+- [#6562](https://github.com/hyperf/hyperf/pull/6562) Added `SqliteDriver` for `hyperf/cache`.
+
+## Optimized
+
+- [#6556](https://github.com/hyperf/hyperf/pull/6556) You can set an expression to model parameters, but it is not standardized.
+
+# v3.1.10 - 2024-02-23
+
+## Added
+
+- [#6542](https://github.com/hyperf/hyperf/pull/6542) Added `MemoryDriver` for `hyperf/cache`.
+- [#6533](https://github.com/hyperf/hyperf/pull/6533) Added `database-sqlite` component.
 
 ## Optimized
 
