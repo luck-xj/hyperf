@@ -9,10 +9,12 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Database\Query\Grammars;
 
 use Hyperf\Collection\Arr;
 use Hyperf\Database\Query\Builder;
+use Hyperf\Database\Query\IndexHint;
 use Hyperf\Database\Query\JsonExpression;
 
 use function Hyperf\Collection\collect;
@@ -32,6 +34,7 @@ class MySqlGrammar extends Grammar
         'columns',
         'from',
         'joins',
+        'indexHint',
         'wheres',
         'groups',
         'havings',
@@ -193,6 +196,18 @@ class MySqlGrammar extends Grammar
     }
 
     /**
+     * Compile the index hints for the query.
+     */
+    protected function compileIndexHint(Builder $query, IndexHint $indexHint): string
+    {
+        return match ($indexHint->type) {
+            'hint' => "use index ({$indexHint->index})",
+            'force' => "force index ({$indexHint->index})",
+            default => "ignore index ({$indexHint->index})",
+        };
+    }
+
+    /**
      * Compile a "JSON contains" statement into SQL.
      *
      * @param string $column
@@ -274,7 +289,7 @@ class MySqlGrammar extends Grammar
     /**
      * Compile a delete query that does not use joins.
      *
-     * @param \Hyperf\Database\Query\Builder $query
+     * @param Builder $query
      * @param string $table
      * @param array $where
      */
@@ -299,7 +314,7 @@ class MySqlGrammar extends Grammar
     /**
      * Compile a delete query that uses joins.
      *
-     * @param \Hyperf\Database\Query\Builder $query
+     * @param Builder $query
      * @param string $table
      * @param array $where
      */

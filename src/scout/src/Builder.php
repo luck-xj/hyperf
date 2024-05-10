@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Scout;
 
 use Closure;
@@ -128,10 +129,15 @@ class Builder
 
     /**
      * Apply the callback's query changes if the given "value" is true.
-     * @param mixed $value
+     *
+     * @param callable($this, $value): $this $callback
+     * @param callable($this, $value): $this $default
+     * @return $this
      */
-    public function when($value, callable $callback, ?callable $default = null): static
+    public function when(mixed $value, callable $callback, ?callable $default = null): static
     {
+        $value = $value instanceof Closure ? $value($this) : $value;
+
         if ($value) {
             return $callback($this, $value) ?: $this;
         }

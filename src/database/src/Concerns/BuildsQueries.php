@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Database\Concerns;
 
 use Closure;
@@ -91,20 +92,20 @@ trait BuildsQueries
     /**
      * Apply the callback's query changes if the given "value" is true.
      *
-     * @param callable $callback
-     * @param callable $default
-     * @param mixed $value
-     * @return $this|mixed
+     * @param callable($this, $value): $this $callback
+     * @param callable($this, $value): $this $default
+     * @return $this
      */
-    public function when($value, $callback, $default = null)
+    public function when(mixed $value, callable $callback, ?callable $default = null): static
     {
+        $value = $value instanceof Closure ? $value($this) : $value;
+
         if ($value) {
             return $callback($this, $value) ?: $this;
         }
         if ($default) {
             return $default($this, $value) ?: $this;
         }
-
         return $this;
     }
 
@@ -122,13 +123,14 @@ trait BuildsQueries
     /**
      * Apply the callback's query changes if the given "value" is false.
      *
-     * @param callable $callback
-     * @param callable $default
-     * @param mixed $value
-     * @return $this|mixed
+     * @param callable($this, $value): $this $callback
+     * @param callable($this, $value): $this $default
+     * @return $this
      */
-    public function unless($value, $callback, $default = null)
+    public function unless(mixed $value, callable $callback, ?callable $default = null): static
     {
+        $value = $value instanceof Closure ? $value($this) : $value;
+
         if (! $value) {
             return $callback($this, $value) ?: $this;
         }

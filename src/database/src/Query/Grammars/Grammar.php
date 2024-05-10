@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace Hyperf\Database\Query\Grammars;
 
 use Hyperf\Collection\Arr;
@@ -412,14 +413,6 @@ class Grammar extends BaseGrammar
      */
     protected function compileFrom(Builder $query, $table): string
     {
-        if ($query->forceIndexes) {
-            $forceIndexes = [];
-            foreach ($query->forceIndexes as $forceIndex) {
-                $forceIndexes[] = $this->wrapValue($forceIndex);
-            }
-            return 'from ' . $this->wrapTable($table) . ' force index (' . implode(',', $forceIndexes) . ')';
-        }
-
         return 'from ' . $this->wrapTable($table);
     }
 
@@ -466,7 +459,7 @@ class Grammar extends BaseGrammar
     /**
      * Get an array of all the where clauses for the query.
      *
-     * @param \Hyperf\Database\Query\Builder $query
+     * @param Builder $query
      */
     protected function compileWheresToArray($query): array
     {
@@ -478,7 +471,7 @@ class Grammar extends BaseGrammar
     /**
      * Format the where clause statements into one string.
      *
-     * @param \Hyperf\Database\Query\Builder $query
+     * @param Builder $query
      * @param array $sql
      */
     protected function concatenateWhereClauses($query, $sql): string
@@ -514,7 +507,6 @@ class Grammar extends BaseGrammar
     /**
      * Compile a "where JSON boolean" clause.
      *
-     * @param string $value
      * @param array $where
      * @return string
      */
