@@ -255,6 +255,14 @@ trait ValidatesAttributes
     }
 
     /**
+     * Validate that an attribute is a list.
+     */
+    public function validateList(string $attribute, mixed $value): bool
+    {
+        return is_array($value) && array_is_list($value);
+    }
+
+    /**
      * Validate that an array has all of the given keys.
      *
      * @param array<int, int|string> $parameters
@@ -1244,6 +1252,22 @@ trait ValidatesAttributes
         }
         if ($value instanceof SplFileInfo) {
             return (string) $value->getPath() !== '';
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate that other attributes do not exist when this attribute exists.
+     */
+    public function validateProhibits(string $attribute, mixed $value, mixed $parameters): bool
+    {
+        if ($this->validateRequired($attribute, $value)) {
+            foreach ($parameters as $parameter) {
+                if ($this->validateRequired($parameter, Arr::get($this->data, $parameter))) {
+                    return false;
+                }
+            }
         }
 
         return true;

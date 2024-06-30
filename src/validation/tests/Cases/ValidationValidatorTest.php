@@ -665,6 +665,23 @@ class ValidationValidatorTest extends TestCase
         $this->assertTrue($v->passes());
     }
 
+    public function testValidateList()
+    {
+        $trans = $this->getIlluminateArrayTranslator();
+
+        $v = new Validator($trans, ['foo' => [1, 2, 3]], ['foo' => 'list']);
+        $this->assertTrue($v->passes());
+
+        $v = new Validator($trans, ['foo' => [1 => 1, 2 => 2]], ['foo' => 'list']);
+        $this->assertFalse($v->passes());
+
+        $v = new Validator($trans, ['foo' => [0 => 'a', 'b' => 'b', 2 => 'c']], ['foo' => 'list']);
+        $this->assertFalse($v->passes());
+
+        $v = new Validator($trans, ['foo' => []], ['foo' => 'list']);
+        $this->assertTrue($v->passes());
+    }
+
     public function testValidateFilled()
     {
         $trans = $this->getIlluminateArrayTranslator();
@@ -4869,6 +4886,58 @@ class ValidationValidatorTest extends TestCase
 
         $this->assertFalse($v->passes());
         $this->assertSame('Rails is not a valid PHP Framework', $v->messages()->first('framework'));
+    }
+
+    public function testProhibits()
+    {
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo', 'emails' => ['foo']], ['email' => 'prohibits:emails']);
+        $this->assertTrue($v->fails());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo', 'emails' => []], ['email' => 'prohibits:emails']);
+        $this->assertTrue($v->passes());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo', 'emails' => ''], ['email' => 'prohibits:emails']);
+        $this->assertTrue($v->passes());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo', 'emails' => null], ['email' => 'prohibits:emails']);
+        $this->assertTrue($v->passes());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo', 'emails' => false], ['email' => 'prohibits:emails']);
+        $this->assertTrue($v->fails());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo', 'emails' => ['foo']], ['email' => 'prohibits:email_address,emails']);
+        $this->assertTrue($v->fails());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo'], ['email' => 'prohibits:emails']);
+        $this->assertTrue($v->passes());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['email' => 'foo', 'other' => 'foo'], ['email' => 'prohibits:email_address,emails']);
+        $this->assertTrue($v->passes());
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $trans->addLines(['validation.prohibits' => 'The :attribute field prohibits :other being present.'], 'en');
+        $v = new Validator($trans, ['email' => 'foo', 'emails' => 'bar', 'email_address' => 'baz'], ['email' => 'prohibits:emails,email_address']);
+        $this->assertFalse($v->passes());
+        $this->assertSame('The email field prohibits emails / email address being present.', $v->messages()->first('email'));
+
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, [
+            'foo' => [
+                ['email' => 'foo', 'emails' => 'foo'],
+                ['emails' => 'foo'],
+            ],
+        ], ['foo.*.email' => 'prohibits:foo.*.emails']);
+        $this->assertFalse($v->passes());
+        $this->assertTrue($v->messages()->has('foo.0.email'));
+        $this->assertFalse($v->messages()->has('foo.1.email'));
     }
 
     public function getIlluminateArrayTranslator()

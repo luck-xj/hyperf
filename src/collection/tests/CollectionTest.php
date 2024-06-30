@@ -12,8 +12,13 @@ declare(strict_types=1);
 
 namespace HyperfTest\Collection;
 
+use Exception;
 use Hyperf\Collection\Collection;
+use Hyperf\Collection\ItemNotFoundException;
+use Hyperf\Collection\LazyCollection;
+use Hyperf\Collection\MultipleItemsFoundException;
 use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 use function Hyperf\Collection\collect;
@@ -678,5 +683,421 @@ class CollectionTest extends TestCase
 
         $c = (new Collection([]))->unless('foo', $callback, $default)->unless('', $callback, $default);
         $this->assertSame(['foo'], $c->all());
+    }
+
+    /**
+     * Provides each collection class, respectively.
+     *
+     * @return array
+     */
+    public static function collectionClassProvider()
+    {
+        return [
+            [Collection::class],
+            [LazyCollection::class],
+        ];
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testSoleReturnsFirstItemInCollectionIfOnlyOneExists($collection): void
+    {
+        $collection = new $collection([
+            ['name' => 'foo'],
+            ['name' => 'bar'],
+        ]);
+
+        $this->assertSame(['name' => 'foo'], $collection->where('name', 'foo')->sole());
+        $this->assertSame(['name' => 'foo'], $collection->sole('name', '=', 'foo'));
+        $this->assertSame(['name' => 'foo'], $collection->sole('name', 'foo'));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testSoleThrowsExceptionIfMoreThanOneItemExists($collection)
+    {
+        $this->expectExceptionObject(new MultipleItemsFoundException(2));
+
+        $collection = new $collection([
+            ['name' => 'foo'],
+            ['name' => 'foo'],
+            ['name' => 'bar'],
+        ]);
+
+        $collection->where('name', 'foo')->sole();
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testSoleReturnsFirstItemInCollectionIfOnlyOneExistsWithCallback($collection)
+    {
+        $data = new $collection(['foo', 'bar', 'baz']);
+        $result = $data->sole(function ($value) {
+            return $value === 'bar';
+        });
+        $this->assertSame('bar', $result);
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testSoleThrowsExceptionIfNoItemsExistWithCallback($collection)
+    {
+        $this->expectException(ItemNotFoundException::class);
+
+        $data = new $collection(['foo', 'bar', 'baz']);
+
+        $data->sole(function ($value) {
+            return $value === 'invalid';
+        });
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testSoleThrowsExceptionIfMoreThanOneItemExistsWithCallback($collection)
+    {
+        $this->expectExceptionObject(new MultipleItemsFoundException(2));
+
+        $data = new $collection(['foo', 'bar', 'bar']);
+
+        $data->sole(function ($value) {
+            return $value === 'bar';
+        });
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testFirstOrFailReturnsFirstItemInCollection($collection)
+    {
+        $collection = new $collection([
+            ['name' => 'foo'],
+            ['name' => 'bar'],
+        ]);
+
+        $this->assertSame(['name' => 'foo'], $collection->where('name', 'foo')->firstOrFail());
+        $this->assertSame(['name' => 'foo'], $collection->firstOrFail('name', '=', 'foo'));
+        $this->assertSame(['name' => 'foo'], $collection->firstOrFail('name', 'foo'));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testFirstOrFailThrowsExceptionIfNoItemsExist($collection)
+    {
+        $this->expectException(ItemNotFoundException::class);
+
+        $collection = new $collection([
+            ['name' => 'foo'],
+            ['name' => 'bar'],
+        ]);
+
+        $collection->where('name', 'INVALID')->firstOrFail();
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testFirstOrFailDoesntThrowExceptionIfMoreThanOneItemExists($collection)
+    {
+        $collection = new $collection([
+            ['name' => 'foo'],
+            ['name' => 'foo'],
+            ['name' => 'bar'],
+        ]);
+
+        $this->assertSame(['name' => 'foo'], $collection->where('name', 'foo')->firstOrFail());
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testFirstOrFailReturnsFirstItemInCollectionIfOnlyOneExistsWithCallback($collection)
+    {
+        $data = new $collection(['foo', 'bar', 'baz']);
+        $result = $data->firstOrFail(function ($value) {
+            return $value === 'bar';
+        });
+        $this->assertSame('bar', $result);
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testFirstOrFailThrowsExceptionIfNoItemsExistWithCallback($collection)
+    {
+        $this->expectException(ItemNotFoundException::class);
+
+        $data = new $collection(['foo', 'bar', 'baz']);
+
+        $data->firstOrFail(function ($value) {
+            return $value === 'invalid';
+        });
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testFirstOrFailDoesntThrowExceptionIfMoreThanOneItemExistsWithCallback($collection)
+    {
+        $data = new $collection(['foo', 'bar', 'bar']);
+
+        $this->assertSame(
+            'bar',
+            $data->firstOrFail(function ($value) {
+                return $value === 'bar';
+            })
+        );
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testFirstOrFailStopsIteratingAtFirstMatch($collection)
+    {
+        $data = new $collection([
+            function () {
+                return false;
+            },
+            function () {
+                return true;
+            },
+            function () {
+                throw new Exception();
+            },
+        ]);
+
+        $this->assertNotNull($data->firstOrFail(function ($callback) {
+            return $callback();
+        }));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testJoin($collection)
+    {
+        $this->assertSame('a, b, c', (new $collection(['a', 'b', 'c']))->join(', '));
+
+        $this->assertSame('a, b and c', (new $collection(['a', 'b', 'c']))->join(', ', ' and '));
+
+        $this->assertSame('a and b', (new $collection(['a', 'b']))->join(', ', ' and '));
+
+        $this->assertSame('a', (new $collection(['a']))->join(', ', ' and '));
+
+        $this->assertSame('', (new $collection([]))->join(', ', ' and '));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testCrossJoin($collection)
+    {
+        // Cross join with an array
+        $this->assertEquals(
+            [[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']],
+            (new $collection([1, 2]))->crossJoin(['a', 'b'])->all()
+        );
+
+        // Cross join with a collection
+        $this->assertEquals(
+            [[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']],
+            (new $collection([1, 2]))->crossJoin(new $collection(['a', 'b']))->all()
+        );
+
+        // Cross join with 2 collections
+        $this->assertEquals(
+            [
+                [1, 'a', 'I'], [1, 'a', 'II'],
+                [1, 'b', 'I'], [1, 'b', 'II'],
+                [2, 'a', 'I'], [2, 'a', 'II'],
+                [2, 'b', 'I'], [2, 'b', 'II'],
+            ],
+            (new $collection([1, 2]))->crossJoin(
+                new $collection(['a', 'b']),
+                new $collection(['I', 'II'])
+            )->all()
+        );
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testIntersectAssocUsingWithNull($collection)
+    {
+        $array1 = new $collection(['a' => 'green', 'b' => 'brown', 'c' => 'blue', 'red']);
+
+        $this->assertEquals([], $array1->intersectAssocUsing(null, 'strcasecmp')->all());
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testIntersectAssocUsingCollection($collection)
+    {
+        $array1 = new $collection(['a' => 'green', 'b' => 'brown', 'c' => 'blue', 'red']);
+        $array2 = new $collection(['a' => 'GREEN', 'B' => 'brown', 'yellow', 'red']);
+
+        $this->assertEquals(['b' => 'brown'], $array1->intersectAssocUsing($array2, 'strcasecmp')->all());
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testIntersectUsingWithNull($collection)
+    {
+        $collect = new $collection(['green', 'brown', 'blue']);
+
+        $this->assertEquals([], $collect->intersectUsing(null, 'strcasecmp')->all());
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testIntersectUsingCollection($collection)
+    {
+        $collect = new $collection(['green', 'brown', 'blue']);
+
+        $this->assertEquals(['green', 'brown'], $collect->intersectUsing(new $collection(['GREEN', 'brown', 'yellow']), 'strcasecmp')->all());
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testDuplicatesWithStrict($collection)
+    {
+        $duplicates = $collection::make([1, 2, 1, 'laravel', null, 'laravel', 'php', null])->duplicatesStrict()->all();
+        $this->assertSame([2 => 1, 5 => 'laravel', 7 => null], $duplicates);
+
+        // does strict comparison
+        $duplicates = $collection::make([2, '2', [], null])->duplicatesStrict()->all();
+        $this->assertSame([], $duplicates);
+
+        // works with mix of primitives
+        $duplicates = $collection::make([1, '2', ['laravel'], ['laravel'], null, '2'])->duplicatesStrict()->all();
+        $this->assertSame([3 => ['laravel'], 5 => '2'], $duplicates);
+
+        // works with mix of primitives, objects, and numbers
+        $expected = new $collection(['laravel']);
+        $duplicates = $collection::make([new $collection(['laravel']), $expected, $expected, [], '2', '2'])->duplicatesStrict()->all();
+        $this->assertSame([2 => $expected, 5 => '2'], $duplicates);
+    }
+
+    public function testGetOrPut()
+    {
+        $data = new Collection(['name' => 'taylor', 'email' => 'foo']);
+
+        $this->assertSame('taylor', $data->getOrPut('name', null));
+        $this->assertSame('foo', $data->getOrPut('email', null));
+        $this->assertSame('male', $data->getOrPut('gender', 'male'));
+
+        $this->assertSame('taylor', $data->get('name'));
+        $this->assertSame('foo', $data->get('email'));
+        $this->assertSame('male', $data->get('gender'));
+
+        $data = new Collection(['name' => 'taylor', 'email' => 'foo']);
+
+        $this->assertSame('taylor', $data->getOrPut('name', function () {
+            return null;
+        }));
+
+        $this->assertSame('foo', $data->getOrPut('email', function () {
+            return null;
+        }));
+
+        $this->assertSame('male', $data->getOrPut('gender', function () {
+            return 'male';
+        }));
+
+        $this->assertSame('taylor', $data->get('name'));
+        $this->assertSame('foo', $data->get('email'));
+        $this->assertSame('male', $data->get('gender'));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testBeforeReturnsItemBeforeTheGivenItem($collection)
+    {
+        $c = new $collection([1, 2, 3, 4, 5, 2, 5, 'name' => 'taylor', 'framework' => 'laravel']);
+
+        $this->assertEquals(1, $c->before(2));
+        $this->assertEquals(1, $c->before('2'));
+        $this->assertEquals(5, $c->before('taylor'));
+        $this->assertSame('taylor', $c->before('laravel'));
+        $this->assertEquals(4, $c->before(function ($value) {
+            return $value > 4;
+        }));
+        $this->assertEquals(5, $c->before(function ($value) {
+            return ! is_numeric($value);
+        }));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testBeforeInStrictMode($collection)
+    {
+        $c = new $collection([false, 0, 1, [], '']);
+        $this->assertNull($c->before('false', true));
+        $this->assertNull($c->before('1', true));
+        $this->assertNull($c->before(false, true));
+        $this->assertEquals(false, $c->before(0, true));
+        $this->assertEquals(0, $c->before(1, true));
+        $this->assertEquals(1, $c->before([], true));
+        $this->assertEquals([], $c->before('', true));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testBeforeReturnsNullWhenItemIsNotFound($collection)
+    {
+        $c = new $collection([1, 2, 3, 4, 5, 'foo' => 'bar']);
+
+        $this->assertNull($c->before(6));
+        $this->assertNull($c->before('foo'));
+        $this->assertNull($c->before(function ($value) {
+            return $value < 1 && is_numeric($value);
+        }));
+        $this->assertNull($c->before(function ($value) {
+            return $value === 'nope';
+        }));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testBeforeReturnsNullWhenItemOnTheFirstitem($collection)
+    {
+        $c = new $collection([1, 2, 3, 4, 5, 'foo' => 'bar']);
+
+        $this->assertNull($c->before(1));
+        $this->assertNull($c->before(function ($value) {
+            return $value < 2 && is_numeric($value);
+        }));
+
+        $c = new $collection(['foo' => 'bar', 1, 2, 3, 4, 5]);
+        $this->assertNull($c->before('bar'));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testAfterReturnsItemAfterTheGivenItem($collection)
+    {
+        $c = new $collection([1, 2, 3, 4, 2, 5, 'name' => 'taylor', 'framework' => 'laravel']);
+
+        $this->assertEquals(2, $c->after(1));
+        $this->assertEquals(3, $c->after(2));
+        $this->assertEquals(4, $c->after(3));
+        $this->assertEquals(2, $c->after(4));
+        $this->assertEquals('taylor', $c->after(5));
+        $this->assertEquals('laravel', $c->after('taylor'));
+
+        $this->assertEquals(4, $c->after(function ($value) {
+            return $value > 2;
+        }));
+        $this->assertEquals('laravel', $c->after(function ($value) {
+            return ! is_numeric($value);
+        }));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testAfterInStrictMode($collection)
+    {
+        $c = new $collection([false, 0, 1, [], '']);
+
+        $this->assertNull($c->after('false', true));
+        $this->assertNull($c->after('1', true));
+        $this->assertNull($c->after('', true));
+        $this->assertEquals(0, $c->after(false, true));
+        $this->assertEquals([], $c->after(1, true));
+        $this->assertEquals('', $c->after([], true));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testAfterReturnsNullWhenItemIsNotFound($collection)
+    {
+        $c = new $collection([1, 2, 3, 4, 5, 'foo' => 'bar']);
+
+        $this->assertNull($c->after(6));
+        $this->assertNull($c->after('foo'));
+        $this->assertNull($c->after(function ($value) {
+            return $value < 1 && is_numeric($value);
+        }));
+        $this->assertNull($c->after(function ($value) {
+            return $value === 'nope';
+        }));
+    }
+
+    #[DataProvider('collectionClassProvider')]
+    public function testAfterReturnsNullWhenItemOnTheLastItem($collection)
+    {
+        $c = new $collection([1, 2, 3, 4, 5, 'foo' => 'bar']);
+
+        $this->assertNull($c->after('bar'));
+        $this->assertNull($c->after(function ($value) {
+            return $value > 4 && ! is_numeric($value);
+        }));
+
+        $c = new $collection(['foo' => 'bar', 1, 2, 3, 4, 5]);
+        $this->assertNull($c->after(5));
     }
 }

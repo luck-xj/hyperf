@@ -24,6 +24,7 @@ use Hyperf\Contract\Arrayable;
 use Hyperf\Contract\LengthAwarePaginatorInterface;
 use Hyperf\Contract\PaginatorInterface;
 use Hyperf\Database\Concerns\BuildsQueries;
+use Hyperf\Database\Concerns\ExplainsQueries;
 use Hyperf\Database\ConnectionInterface;
 use Hyperf\Database\Exception\InvalidBindingException;
 use Hyperf\Database\Model\Builder as ModelBuilder;
@@ -31,6 +32,8 @@ use Hyperf\Database\Model\Relations\Relation;
 use Hyperf\Database\Query\Grammars\Grammar;
 use Hyperf\Database\Query\Processors\Processor;
 use Hyperf\Macroable\Macroable;
+use Hyperf\Paginator\Contract\CursorPaginator as CursorPaginatorContract;
+use Hyperf\Paginator\Cursor;
 use Hyperf\Paginator\Paginator;
 use Hyperf\Stringable\Str;
 use Hyperf\Stringable\StrCache;
@@ -44,7 +47,7 @@ use function Hyperf\Tappable\tap;
 
 class Builder
 {
-    use BuildsQueries, ForwardsCalls, Macroable {
+    use BuildsQueries, ExplainsQueries, ForwardsCalls, Macroable {
         __call as macroCall;
     }
 
@@ -535,6 +538,30 @@ class Builder
         $this->addBinding($bindings, 'join');
 
         return $this->join(new Expression($expression), $first, $operator, $second, $type, $where);
+    }
+
+    /**
+     * Add a lateral join clause to the query.
+     */
+    public function joinLateral(Builder|Closure|ModelBuilder|string $query, string $as, string $type = 'inner'): static
+    {
+        [$query, $bindings] = $this->createSub($query);
+
+        $expression = '(' . $query . ') as ' . $this->grammar->wrapTable($as);
+
+        $this->addBinding($bindings, 'join');
+
+        $this->joins[] = $this->newJoinLateralClause($this, $type, new Expression($expression));
+
+        return $this;
+    }
+
+    /**
+     * Add a lateral left join to the query.
+     */
+    public function leftJoinLateral(Builder|Closure|ModelBuilder|string $query, string $as): static
+    {
+        return $this->joinLateral($query, $as, 'left');
     }
 
     /**
@@ -1452,6 +1479,46 @@ class Builder
     }
 
     /**
+     * Add a "where JSON overlaps" clause to the query.
+     */
+    public function whereJsonOverlaps(string $column, mixed $value, string $boolean = 'and', bool $not = false): static
+    {
+        $type = 'JsonOverlaps';
+
+        $this->wheres[] = compact('type', 'column', 'value', 'boolean', 'not');
+
+        if (! $value instanceof Expression) {
+            $this->addBinding($this->grammar->prepareBindingForJsonContains($value));
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add an "or where JSON overlaps" clause to the query.
+     */
+    public function orWhereJsonOverlaps(string $column, mixed $value): static
+    {
+        return $this->whereJsonOverlaps($column, $value, 'or');
+    }
+
+    /**
+     * Add a "where JSON not overlap" clause to the query.
+     */
+    public function whereJsonDoesntOverlap(string $column, mixed $value, string $boolean = 'and'): static
+    {
+        return $this->whereJsonOverlaps($column, $value, $boolean, true);
+    }
+
+    /**
+     * Add an "or where JSON not overlap" clause to the query.
+     */
+    public function orWhereJsonDoesntOverlap(string $column, mixed $value): static
+    {
+        return $this->whereJsonDoesntOverlap($column, $value, 'or');
+    }
+
+    /**
      * Add a "where JSON length" clause to the query.
      *
      * @param string $column
@@ -1558,6 +1625,70 @@ class Builder
     public function orWhereFullText(array|string $columns, string $value, array $options = []): static
     {
         return $this->whereFullText($columns, $value, $options, 'or');
+    }
+
+    /**
+     * Add a "where" clause to the query for multiple columns with "and" conditions between them.
+     *
+     * @param string[] $columns
+     */
+    public function whereAll(array $columns, mixed $operator = null, mixed $value = null, string $boolean = 'and'): static
+    {
+        [$value, $operator] = $this->prepareValueAndOperator(
+            $value,
+            $operator,
+            func_num_args() === 2
+        );
+
+        $this->whereNested(function ($query) use ($columns, $operator, $value) {
+            foreach ($columns as $column) {
+                $query->where($column, $operator, $value, 'and');
+            }
+        }, $boolean);
+
+        return $this;
+    }
+
+    /**
+     * Add an "or where" clause to the query for multiple columns with "and" conditions between them.
+     *
+     * @param string[] $columns
+     */
+    public function orWhereAll(array $columns, mixed $operator = null, mixed $value = null): static
+    {
+        return $this->whereAll($columns, $operator, $value, 'or');
+    }
+
+    /**
+     * Add an "where" clause to the query for multiple columns with "or" conditions between them.
+     *
+     * @param string[] $columns
+     */
+    public function whereAny(array $columns, mixed $operator = null, mixed $value = null, string $boolean = 'and'): static
+    {
+        [$value, $operator] = $this->prepareValueAndOperator(
+            $value,
+            $operator,
+            func_num_args() === 2
+        );
+
+        $this->whereNested(function ($query) use ($columns, $operator, $value) {
+            foreach ($columns as $column) {
+                $query->where($column, $operator, $value, 'or');
+            }
+        }, $boolean);
+
+        return $this;
+    }
+
+    /**
+     * Add an "or where" clause to the query for multiple columns with "or" conditions between them.
+     *
+     * @param string[] $columns
+     */
+    public function orWhereAny(array $columns, mixed $operator = null, mixed $value = null): static
+    {
+        return $this->whereAny($columns, $operator, $value, 'or');
     }
 
     /**
@@ -1675,12 +1806,19 @@ class Builder
     /**
      * Add an "order by" clause to the query.
      *
-     * @param string $column
-     * @param string $direction
+     * @param Closure|Expression|ModelBuilder|static|string $column
      * @return $this
      */
-    public function orderBy($column, $direction = 'asc')
+    public function orderBy(mixed $column, string $direction = 'asc'): static
     {
+        if ($this->isQueryable($column)) {
+            [$query, $bindings] = $this->createSub($column);
+
+            $column = new Expression('(' . $query . ')');
+
+            $this->addBinding($bindings, $this->unions ? 'unionOrder' : 'order');
+        }
+
         $this->{$this->unions ? 'unionOrders' : 'orders'}[] = [
             'column' => $column,
             'direction' => strtolower($direction) === 'asc' ? 'asc' : 'desc',
@@ -2353,6 +2491,19 @@ class Builder
     }
 
     /**
+     * Insert new records into the table using a subquery while ignoring errors.
+     */
+    public function insertOrIgnoreUsing(array $columns, array|Builder|Closure|ModelBuilder|string $query): int
+    {
+        [$sql, $bindings] = $this->createSub($query);
+
+        return $this->connection->affectingStatement(
+            $this->grammar->compileInsertOrIgnoreUsing($this, $columns, $sql),
+            $this->cleanBindings($bindings)
+        );
+    }
+
+    /**
      * Insert ignore a new record into the database.
      */
     public function insertOrIgnore(array $values): int
@@ -2395,6 +2546,10 @@ class Builder
     {
         if (! $this->where($attributes)->exists()) {
             return $this->insert(array_merge($attributes, $values));
+        }
+
+        if (empty($values)) {
+            return true;
         }
 
         return (bool) $this->take(1)->update($values);
@@ -2450,7 +2605,7 @@ class Builder
      * @param float|int $amount
      * @return int
      */
-    public function increment($column, $amount = 1, array $extra = [])
+    public function increment(Expression|string $column, mixed $amount = 1, array $extra = [])
     {
         if (! is_numeric($amount)) {
             throw new InvalidArgumentException('Non-numeric value passed to increment method.');
@@ -2464,13 +2619,32 @@ class Builder
     }
 
     /**
+     * Increment the given column's values by the given amounts.
+     */
+    public function incrementEach(array $columns, array $extra = []): int
+    {
+        foreach ($columns as $column => $amount) {
+            if (! is_numeric($amount)) {
+                throw new InvalidArgumentException("Non-numeric value passed as increment amount for column: '{$column}'.");
+            }
+            if (! is_string($column)) {
+                throw new InvalidArgumentException('Non-associative array passed to incrementEach method.');
+            }
+
+            $columns[$column] = $this->raw("{$this->grammar->wrap($column)} + {$amount}");
+        }
+
+        return $this->update(array_merge($columns, $extra));
+    }
+
+    /**
      * Decrement a column's value by a given amount.
      *
      * @param string $column
      * @param float|int $amount
      * @return int
      */
-    public function decrement($column, $amount = 1, array $extra = [])
+    public function decrement(Expression|string $column, mixed $amount = 1, array $extra = [])
     {
         if (! is_numeric($amount)) {
             throw new InvalidArgumentException('Non-numeric value passed to decrement method.');
@@ -2481,6 +2655,25 @@ class Builder
         $columns = array_merge([$column => $this->raw("{$wrapped} - {$amount}")], $extra);
 
         return $this->update($columns);
+    }
+
+    /**
+     * Decrement the given column's values by the given amounts.
+     */
+    public function decrementEach(array $columns, array $extra = []): int
+    {
+        foreach ($columns as $column => $amount) {
+            if (! is_numeric($amount)) {
+                throw new InvalidArgumentException("Non-numeric value passed as decrement amount for column: '{$column}'.");
+            }
+            if (! is_string($column)) {
+                throw new InvalidArgumentException('Non-associative array passed to decrementEach method.');
+            }
+
+            $columns[$column] = $this->raw("{$this->grammar->wrap($column)} - {$amount}");
+        }
+
+        return $this->update(array_merge($columns, $extra));
     }
 
     /**
@@ -2512,6 +2705,16 @@ class Builder
     }
 
     /**
+     * Get a paginator only supporting simple next and previous links.
+     *
+     * This is more efficient on larger data-sets, etc.
+     */
+    public function cursorPaginate(?int $perPage = 15, array|string $columns = ['*'], string $cursorName = 'cursor', null|Cursor|string $cursor = null): CursorPaginatorContract
+    {
+        return $this->paginateUsingCursor($perPage, $columns, $cursorName, $cursor);
+    }
+
+    /**
      * Get a new instance of the query builder.
      *
      * @return Builder
@@ -2519,6 +2722,19 @@ class Builder
     public function newQuery()
     {
         return new static($this->connection, $this->grammar, $this->processor);
+    }
+
+    /**
+     * Get all of the query builder's columns in a text-only array with all expressions evaluated.
+     */
+    public function getColumns(): array
+    {
+        if (! is_null($this->columns)) {
+            return array_map(function ($column) {
+                return $column instanceof Expression ? $this->grammar->getValue($column) : $column;
+            }, $this->columns);
+        }
+        return [];
     }
 
     /**
@@ -2708,6 +2924,65 @@ class Builder
                 $clone->bindings[$type] = [];
             }
         });
+    }
+
+    /**
+     * Get the default key name of the table.
+     */
+    protected function defaultKeyName(): string
+    {
+        return 'id';
+    }
+
+    /**
+     * Ensure the proper order by required for cursor pagination.
+     */
+    protected function ensureOrderForCursorPagination(bool $shouldReverse = false): Collection
+    {
+        if (empty($this->orders) && empty($this->unionOrders)) {
+            $this->enforceOrderBy();
+        }
+
+        $reverseDirection = function ($order) {
+            if (! isset($order['direction'])) {
+                return $order;
+            }
+
+            $order['direction'] = $order['direction'] === 'asc' ? 'desc' : 'asc';
+
+            return $order;
+        };
+
+        if ($shouldReverse) {
+            $this->orders = collect($this->orders)->map($reverseDirection)->toArray();
+            $this->unionOrders = collect($this->unionOrders)->map($reverseDirection)->toArray();
+        }
+
+        $orders = ! empty($this->unionOrders) ? $this->unionOrders : $this->orders;
+
+        return collect($orders)
+            ->filter(fn ($order) => Arr::has($order, 'direction'))
+            ->values();
+    }
+
+    /**
+     * Get the query builder instances that are used in the union of the query.
+     */
+    protected function getUnionBuilders(): Collection
+    {
+        return isset($this->unions)
+            ? collect($this->unions)->pluck('query')
+            : collect();
+    }
+
+    /**
+     * Get a new join lateral clause.
+     *
+     * @param string $table
+     */
+    protected function newJoinLateralClause(self $parentQuery, string $type, Expression|string $table): JoinLateralClause
+    {
+        return new JoinLateralClause($parentQuery, $type, $table);
     }
 
     /**

@@ -39,6 +39,7 @@
 - [hyperf/model-cache](https://github.com/hyperf/model-cache) Hyperf 官方提供的基於 [hyperf/database](https://github.com/hyperf/database) 元件的自動模型快取元件
 - [reasno/fastmongo](https://github.com/Reasno/fastmongo) 基於 `hyperf/gotask` 實現的協程化 `MongoDB` 客戶端
 - [hyperf-ext/translatable](https://github.com/hyperf-ext/translatable) 為模型提供多語言能力
+- [233cy/hyperf-tenant](https://github.com/233cy/hyperf-tenant) 為模型提供多租戶欄位區分
 
 ## 依賴注入容器
 
@@ -102,7 +103,8 @@
 
 ## ID 生成器
 
-- [hyperf/snowflake](https://github.com/hyperf/snowflake) Hyperf 官方提供的 Snowflake ID 生成器元件 (beta)
+- [hyperf/snowflake](https://github.com/hyperf/snowflake) Hyperf 官方提供的 Snowflake ID 生成器元件
+- [tangwei/snowflake](https://github.com/tw2066/snowflake) 基於`hyperf/snowflake`元件，增強了`工作機器ID`的維護
 
 ## 文件生成
 

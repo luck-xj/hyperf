@@ -600,8 +600,11 @@ class ModelBuilderTest extends TestCase
         $this->assertInstanceOf(Builder::class, $builder->foobar());
 
         $builder = $this->getBuilder();
-        $builder->getQuery()->shouldReceive('insert')->once()->with(['bar'])->andReturn('foo');
+        $builder->getQuery()->shouldReceive('insertOrIgnoreUsing')->once()->with(['bar'], 'baz')->andReturn(1);
+        $this->assertSame(1, $builder->insertOrIgnoreUsing(['bar'], 'baz'));
 
+        $builder = $this->getBuilder();
+        $builder->getQuery()->shouldReceive('insert')->once()->with(['bar'])->andReturn('foo');
         $this->assertEquals('foo', $builder->insert(['bar']));
     }
 
@@ -1237,6 +1240,178 @@ class ModelBuilderTest extends TestCase
         $this->assertSame(vsprintf('select * from "table" where exists (select * from "table" as "%s" where "%s"."id" = "table"."customer_id")', [$relationHash2, $relationHash2]), $builder2->toSql());
     }
 
+    public function testTouch()
+    {
+        Carbon::setTestNow($now = '2017-10-10 10:10:10');
+
+        $query = Mockery::mock(BaseBuilder::class);
+        $query->shouldReceive('from')->with('foo_table')->andReturn('foo_table');
+        $query->from = 'foo_table';
+
+        $builder = new Builder($query);
+        $model = new ModelBuilderTestStubStringPrimaryKey();
+        $builder->setModel($model);
+
+        $query->shouldReceive('update')->once()->with(['updated_at' => $now])->andReturn(2);
+
+        $result = $builder->touch();
+
+        $this->assertEquals(2, $result);
+    }
+
+    public function testTouchWithCustomColumn()
+    {
+        Carbon::setTestNow($now = '2017-10-10 10:10:10');
+
+        $query = Mockery::mock(BaseBuilder::class);
+        $query->shouldReceive('from')->with('foo_table')->andReturn('foo_table');
+        $query->from = 'foo_table';
+
+        $builder = new Builder($query);
+        $model = new ModelBuilderTestStubStringPrimaryKey();
+        $builder->setModel($model);
+
+        $query->shouldReceive('update')->once()->with(['published_at' => $now])->andReturn(2);
+
+        $result = $builder->touch('published_at');
+
+        $this->assertEquals(2, $result);
+    }
+
+    public function testTouchWithoutUpdatedAtColumn()
+    {
+        $query = Mockery::mock(BaseBuilder::class);
+        $query->shouldReceive('from')->with('table')->andReturn('table');
+        $query->from = 'table';
+
+        $builder = new Builder($query);
+        $model = new ModelBuilderTestStubWithoutTimestamp();
+        $builder->setModel($model);
+
+        $query->shouldNotReceive('update');
+
+        $result = $builder->touch();
+
+        $this->assertFalse($result);
+    }
+
+    public function testQualifyColumns()
+    {
+        $builder = new Builder(Mockery::mock(BaseBuilder::class));
+        $builder->shouldReceive('from')->with('foo_table');
+
+        $builder->setModel(new ModelBuilderTestStubStringPrimaryKey());
+
+        $this->assertEquals(['foo_table.column', 'foo_table.name'], $builder->qualifyColumns(['column', 'name']));
+    }
+
+    public function testValueOrFailMethodWithModelFound()
+    {
+        $builder = Mockery::mock(Builder::class . '[first]', [$this->getMockQueryBuilder()]);
+        $mockModel = new stdClass();
+        $mockModel->name = 'foo';
+        $builder->shouldReceive('first')->with(['name'])->andReturn($mockModel);
+        $builder->shouldReceive('first')->with(['test'])->andReturn(null);
+        $builder->setModel(new ModelBuilderTestStubStringPrimaryKey());
+        $this->assertSame('foo', $builder->valueOrFail('name'));
+        $this->expectException(ModelNotFoundException::class);
+        $builder->valueOrFail('test');
+    }
+
+    public function testLazyWithLastChunkComplete()
+    {
+        $builder = Mockery::mock(Builder::class . '[forPage,get]', [$this->getMockQueryBuilder()]);
+        $builder->getQuery()->orders[] = ['column' => 'foobar', 'direction' => 'asc'];
+
+        $builder->shouldReceive('forPage')->once()->with(1, 2)->andReturnSelf();
+        $builder->shouldReceive('forPage')->once()->with(2, 2)->andReturnSelf();
+        $builder->shouldReceive('forPage')->once()->with(3, 2)->andReturnSelf();
+        $builder->shouldReceive('get')->times(3)->andReturn(
+            new Collection(['foo1', 'foo2']),
+            new Collection(['foo3', 'foo4']),
+            new Collection([])
+        );
+
+        $this->assertEquals(
+            ['foo1', 'foo2', 'foo3', 'foo4'],
+            $builder->lazy(2)->all()
+        );
+    }
+
+    public function testLazyWithLastChunkPartial()
+    {
+        $builder = Mockery::mock(Builder::class . '[forPage,get]', [$this->getMockQueryBuilder()]);
+        $builder->getQuery()->orders[] = ['column' => 'foobar', 'direction' => 'asc'];
+
+        $builder->shouldReceive('forPage')->once()->with(1, 2)->andReturnSelf();
+        $builder->shouldReceive('forPage')->once()->with(2, 2)->andReturnSelf();
+        $builder->shouldReceive('get')->times(2)->andReturn(
+            new Collection(['foo1', 'foo2']),
+            new Collection(['foo3'])
+        );
+
+        $this->assertEquals(
+            ['foo1', 'foo2', 'foo3'],
+            $builder->lazy(2)->all()
+        );
+    }
+
+    public function testLazyIsLazy()
+    {
+        $builder = Mockery::mock(Builder::class . '[forPage,get]', [$this->getMockQueryBuilder()]);
+        $builder->getQuery()->orders[] = ['column' => 'foobar', 'direction' => 'asc'];
+
+        $builder->shouldReceive('forPage')->once()->with(1, 2)->andReturnSelf();
+        $builder->shouldReceive('get')->once()->andReturn(new Collection(['foo1', 'foo2']));
+
+        $this->assertEquals(['foo1', 'foo2'], $builder->lazy(2)->take(2)->all());
+    }
+
+    public function testLazyByIdWithLastChunkComplete()
+    {
+        $builder = Mockery::mock(Builder::class . '[forPageAfterId,get]', [$this->getMockQueryBuilder()]);
+        $builder->getQuery()->orders[] = ['column' => 'foobar', 'direction' => 'asc'];
+
+        $chunk1 = new Collection([(object) ['someIdField' => 1], (object) ['someIdField' => 2]]);
+        $chunk2 = new Collection([(object) ['someIdField' => 10], (object) ['someIdField' => 11]]);
+        $chunk3 = new Collection([]);
+        $builder->shouldReceive('forPageAfterId')->once()->with(2, 0, 'someIdField')->andReturnSelf();
+        $builder->shouldReceive('forPageAfterId')->once()->with(2, 2, 'someIdField')->andReturnSelf();
+        $builder->shouldReceive('forPageAfterId')->once()->with(2, 11, 'someIdField')->andReturnSelf();
+        $builder->shouldReceive('get')->times(3)->andReturn($chunk1, $chunk2, $chunk3);
+
+        $this->assertEquals(
+            [
+                (object) ['someIdField' => 1],
+                (object) ['someIdField' => 2],
+                (object) ['someIdField' => 10],
+                (object) ['someIdField' => 11],
+            ],
+            $builder->lazyById(2, 'someIdField')->all()
+        );
+    }
+
+    public function testLazyByIdWithLastChunkPartial()
+    {
+        $builder = Mockery::mock(Builder::class . '[forPageAfterId,get]', [$this->getMockQueryBuilder()]);
+        $builder->getQuery()->orders[] = ['column' => 'foobar', 'direction' => 'asc'];
+
+        $chunk1 = new Collection([(object) ['someIdField' => 1], (object) ['someIdField' => 2]]);
+        $chunk2 = new Collection([(object) ['someIdField' => 10]]);
+        $builder->shouldReceive('forPageAfterId')->once()->with(2, 0, 'someIdField')->andReturnSelf();
+        $builder->shouldReceive('forPageAfterId')->once()->with(2, 2, 'someIdField')->andReturnSelf();
+        $builder->shouldReceive('get')->times(2)->andReturn($chunk1, $chunk2);
+
+        $this->assertEquals(
+            [
+                (object) ['someIdField' => 1],
+                (object) ['someIdField' => 2],
+                (object) ['someIdField' => 10],
+            ],
+            $builder->lazyById(2, 'someIdField')->all()
+        );
+    }
+
     protected function mockConnectionForModel($model, $database)
     {
         $grammarClass = 'Hyperf\Database\Query\Grammars\\' . $database . 'Grammar';
@@ -1270,6 +1445,14 @@ class ModelBuilderTest extends TestCase
 
         return $query;
     }
+}
+class ModelBuilderTestStubStringPrimaryKey extends Model
+{
+    public bool $incrementing = false;
+
+    protected ?string $table = 'foo_table';
+
+    protected string $keyType = 'string';
 }
 
 class UserMixin

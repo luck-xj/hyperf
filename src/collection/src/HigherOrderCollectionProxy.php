@@ -13,9 +13,8 @@ declare(strict_types=1);
 namespace Hyperf\Collection;
 
 /**
- * @mixin \Hyperf\Collection\Collection
- * Most of the methods in this file come from illuminate/collections,
- * thanks Laravel Team provide such a useful class.
+ * @mixin Collection
+ * @mixin Enumerable
  */
 class HigherOrderCollectionProxy
 {
@@ -24,7 +23,7 @@ class HigherOrderCollectionProxy
      * @param Collection $collection the collection being operated on
      * @param string $method the method being proxied
      */
-    public function __construct(protected Collection $collection, protected string $method)
+    public function __construct(protected Enumerable $collection, protected string $method)
     {
     }
 
