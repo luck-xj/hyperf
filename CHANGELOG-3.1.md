@@ -1,4 +1,67 @@
-# v3.1.29 - TBD
+# v3.1.36 - TBD
+
+# v3.1.35 - 2024-08-08
+
+## Fixed
+
+- [#6987](https://github.com/hyperf/hyperf/pull/6987) Fixed bug that the root path of swagger server cannot work.
+
+# v3.1.34 - 2024-08-01
+
+## Added
+
+- [#6978](https://github.com/hyperf/hyperf/pull/6978) Support static method for `#[AsCommand]`.
+- [#6979](https://github.com/hyperf/hyperf/pull/6979) Added command `queue:dynamic-reload`.
+
+# v3.1.33 - 2024-07-25
+
+## Optimized
+
+- [#6962](https://github.com/hyperf/hyperf/pull/6962) Optimized error message of command exceptions.
+- [#6963](https://github.com/hyperf/hyperf/pull/6963) Optimized code for `Model/JsonResource::toJson`.
+
+## Fixed
+
+- [#6954](https://github.com/hyperf/hyperf/pull/6954) Fixed bug that the connection cannot reconnect to the server in a situation where there was a failover and exchange of read and write hosts.
+- [#6961](https://github.com/hyperf/hyperf/pull/6961) Fixed bug that `websocket sender` not support `Swow`.
+
+# v3.1.32 - 2024-07-18
+
+## Fixed
+
+- [#6949](https://github.com/hyperf/hyperf/pull/6949) Fixed bug that restart failed when don't have `.env`.
+- [#6953](https://github.com/hyperf/hyperf/pull/6953) Fixed bug that socketio-server cannot work for swow engine.
+
+## Optimized
+
+- [#6946](https://github.com/hyperf/hyperf/pull/6946) Removed Swoole Atomic dependency and useless restart counter in watcher.
+
+## Added
+
+- [#6950](https://github.com/hyperf/hyperf/pull/6950) Support `where bit functions and operators` for `database`.
+
+# v3.1.31 - 2024-07-11
+
+## Added
+
+- [#6936](https://github.com/hyperf/hyperf/pull/6936) Support to reload `.env` when using `hyperf/watcher`.
+
+# v3.1.30 - 2024-07-05
+
+## Fixed
+
+- [#6925](https://github.com/hyperf/hyperf/pull/6925) Fixed bug that `sortByMany` don't reset indexes for `Collection`. But it will be return the same result like `sortBy` in `v3.2`.
+
+# v3.1.29 - 2024-07-04
+
+## Fixed
+
+- [#6925](https://github.com/hyperf/hyperf/pull/6925) Fixed bug that `sortByMany` cannot support options like `sortBy`.
+
+## Added
+
+- [#6896](https://github.com/hyperf/hyperf/pull/6896) Added `SftpAdapter` for `hyperf/filesystem`.
+- [#6917](https://github.com/hyperf/hyperf/pull/6917) Added `Str::chopStart` and `Str::chopEnd`.
 
 # v3.1.28 - 2024-06-27
 
