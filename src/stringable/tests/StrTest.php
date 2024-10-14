@@ -333,6 +333,15 @@ class StrTest extends TestCase
         $this->assertTrue(Str::isMatch(['/^[a-zA-Z,!]+$/', '/^(.*(.*(.*)))/'], 'Hello, Hyperf!'));
     }
 
+    public function testIs()
+    {
+        $this->assertTrue(Str::is('Hello/*', 'Hello/Hyperf'));
+        $this->assertFalse(Str::is('Hyperf', 'hyperf'));
+        $this->assertFalse(Str::is('', 0));
+        $this->assertFalse(Str::is([null], 0));
+        $this->assertTrue(Str::is([null], null));
+    }
+
     public function testCamel()
     {
         $this->assertSame('helloWorld', Str::camel('HelloWorld'));
@@ -970,6 +979,15 @@ class StrTest extends TestCase
         );
 
         $this->assertSame("\xE9", Str::trim(" \xE9 "));
+
+        $trimDefaultChars = [' ', "\n", "\r", "\t", "\v"];
+
+        foreach ($trimDefaultChars as $char) {
+            $this->assertSame('', Str::trim(" {$char} "));
+            $this->assertSame(trim(" {$char} "), Str::trim(" {$char} "));
+            $this->assertSame('foo bar', Str::trim("{$char} foo bar {$char}"));
+            $this->assertSame(trim("{$char} foo bar {$char}"), Str::trim("{$char} foo bar {$char}"));
+        }
     }
 
     public function testLtrim()
@@ -990,6 +1008,15 @@ class StrTest extends TestCase
             ')
         );
         $this->assertSame("\xE9 ", Str::ltrim(" \xE9 "));
+
+        $ltrimDefaultChars = [' ', "\n", "\r", "\t", "\v"];
+
+        foreach ($ltrimDefaultChars as $char) {
+            $this->assertSame('', Str::ltrim(" {$char} "));
+            $this->assertSame(ltrim(" {$char} "), Str::ltrim(" {$char} "));
+            $this->assertSame("foo bar {$char}", Str::ltrim("{$char} foo bar {$char}"));
+            $this->assertSame(ltrim("{$char} foo bar {$char}"), Str::ltrim("{$char} foo bar {$char}"));
+        }
     }
 
     public function testRtrim()
@@ -1011,6 +1038,15 @@ class StrTest extends TestCase
         );
 
         $this->assertSame(" \xE9", Str::rtrim(" \xE9 "));
+
+        $rtrimDefaultChars = [' ', "\n", "\r", "\t", "\v"];
+
+        foreach ($rtrimDefaultChars as $char) {
+            $this->assertSame('', Str::rtrim(" {$char} "));
+            $this->assertSame(rtrim(" {$char} "), Str::rtrim(" {$char} "));
+            $this->assertSame("{$char} foo bar", Str::rtrim("{$char} foo bar {$char}"));
+            $this->assertSame(rtrim("{$char} foo bar {$char}"), Str::rtrim("{$char} foo bar {$char}"));
+        }
     }
 
     public function testSquish()
