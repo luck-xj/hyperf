@@ -1,4 +1,181 @@
-# v3.1.44 - TBD
+# v3.1.60 - TBD
+
+# v3.1.59 - 2025-07-03
+
+## Fixed
+
+- [#7421](https://github.com/hyperf/hyperf/pull/7421) Fixed bug that the cookie value cannot be deleted when set "".
+- [#7424](https://github.com/hyperf/hyperf/pull/7424) Fixed bug that the path of `php` cannot contain spaces for `watcher`.
+- [#7427](https://github.com/hyperf/hyperf/pull/7427) Fixed bug that `exclude` cannot not work when using `validation`.
+
+## Optimized
+
+- [#7394](https://github.com/hyperf/hyperf/pull/7394) Release redis connection immediately when using `transaction` or `pipeline` with callbacks.
+
+# v3.1.57 - 2025-06-23
+
+## Fixed
+
+- [#7402](https://github.com/hyperf/hyperf/pull/7402) Fixed bug that `connect_timeout` cannot work for `pgsql-swoole` database.
+- [#7414](https://github.com/hyperf/hyperf/pull/7414) Fixed bug that sqlite migration does not work.
+- [#7420](https://github.com/hyperf/hyperf/pull/7420) Fixed bug that luasha cannot work when redis server restart.
+
+## Optimized
+
+- [#7411](https://github.com/hyperf/hyperf/pull/7411) Remove `Hyperf\Utils` Component.
+
+# v3.1.56 - 2025-06-05
+
+## Fixed
+
+- [#7400](https://github.com/hyperf/hyperf/pull/7400) Fixed bug that `gen:model` cannot work when using `pgsql`.
+- [#7410](https://github.com/hyperf/hyperf/pull/7410) Fixed bug that `setMultiple` cannot work for memory cache driver.
+
+## Added
+
+- [#7392](https://github.com/hyperf/hyperf/pull/7392) Added `coroutine` option to `AsCommand` and `ClosureCommand`.
+- [#7404](https://github.com/hyperf/hyperf/pull/7404) Added param `runAsync` for `CacheAHead`.
+
+# v3.1.55 - 2025-05-15
+
+## Added
+
+- [#7365](https://github.com/hyperf/hyperf/pull/7365) Support callable config type for `hyperf/logger`. 
+- [#7381](https://github.com/hyperf/hyperf/pull/7381) Added `Hyperf\Database\PgSQL\Query\Grammars\PostgresGrammar\compileJsonOverlaps`.
+
+## Fixed
+
+- [#7363](https://github.com/hyperf/hyperf/pull/7363) Fixed doc blocks for `Hyperf\HttpServer\Router\RouteCollector`.
+- [#7379](https://github.com/hyperf/hyperf/pull/7379) Fixed bug that pdo connector with pgsql cannot work when using migration.
+
+# v3.1.54 - 2025-04-27
+
+## Added
+
+- [#7316](https://github.com/hyperf/hyperf/pull/7316) Support to rewrite function `paginationInformation` for `resource`.
+- [#7343](https://github.com/hyperf/hyperf/pull/7343) Added `Hyperf\Coroutine\Barrier`.
+
+## Fixed
+
+- [#7328](https://github.com/hyperf/hyperf/pull/7328) Fix primary key creation for MySQL with sql_require_primary_key enabled.
+- [#7334](https://github.com/hyperf/hyperf/pull/7334) Fixed bug that kafka producer cannot reconnect to server when the internet broken.
+
+# v3.1.53 - 2025-04-03
+
+## Fixed
+
+- [#7309](https://github.com/hyperf/hyperf/pull/7309) Fixed bug that testing client cannot support json without `POST`.
+- [#7318](https://github.com/hyperf/hyperf/pull/7318) Fixed bug that close frame will be lost for websocket-client.
+- [#7329](https://github.com/hyperf/hyperf/pull/7329) Fixed bug that the type of `$connection` is not correct when creating models.
+
+## Added
+
+- [#7311](https://github.com/hyperf/hyperf/pull/7311) Added `Hyperf\Redis\Event\CommandExecuted::getFormatCommand()`.
+- [#7313](https://github.com/hyperf/hyperf/pull/7313) Added validation rules `contains`, `extensions` and `hex_color`.
+- [#7314](https://github.com/hyperf/hyperf/pull/7314) Enable `schema` Configuration for `hyperf/db` with `pgsql`.
+- [#7325](https://github.com/hyperf/hyperf/pull/7325) Added metadata `attributes` into `Hyperf\Di\ReflectionType`.
+- [#7332](https://github.com/hyperf/hyperf/pull/7332) Added `Hyperf\Memory\LockManager::exists()`.
+
+# v3.1.52 - 2025-02-27
+
+## Added
+
+- [#7200](https://github.com/hyperf/hyperf/pull/7200) Added `Hyperf\Database\Connection::scalar()` which used to retrieve the first column of the first row from a query.
+- [#7279](https://github.com/hyperf/hyperf/pull/7279) Support to generate comments from `trait` when using `gen:model`.
+- [#7286](https://github.com/hyperf/hyperf/pull/7286) Added `Hyperf\Coroutine\Coroutine::list()`.
+- [#7291](https://github.com/hyperf/hyperf/pull/7291) Support to throw exception when read `null` from `Model::createOrFirst`.
+
+# v3.1.51 - 2025-02-06
+
+## Added
+
+- [#7250](https://github.com/hyperf/hyperf/pull/7250) Added `Hyperf\AsyncQueue\Driver\Driver::getConfig()`.
+- [#7255](https://github.com/hyperf/hyperf/pull/7255) Added `createOrFirst()` and `createOrRestore()` into `Hyperf\Database\Model\Builder`.
+- [#7259](https://github.com/hyperf/hyperf/pull/7259) Added `existsOr` and `doesntExistOr` into `Hyperf\Database\Query\Builder`.
+- [#7260](https://github.com/hyperf/hyperf/pull/7260) Added `Hyperf\Database\Query\Builder::sole()`.
+- [#7261](https://github.com/hyperf/hyperf/pull/7261) Added `Hyperf\Database\Model\Model::discardChanges()`.
+- [#7262](https://github.com/hyperf/hyperf/pull/7262) Added `Hyperf\Database\Model\Model::hasAppended()`.
+- [#7263](https://github.com/hyperf/hyperf/pull/7263) Added `Hyperf\Coroutine\WaitConcurrent`.
+- [#7265](https://github.com/hyperf/hyperf/pull/7265) Added `Hyperf\Command\Concerns\Prohibitable`.
+- [#7269](https://github.com/hyperf/hyperf/pull/7269) Added `Hyperf\Redis\Event\CommandExecuted`.
+- [#7273](https://github.com/hyperf/hyperf/pull/7273) Support to open the newly created files for editor `cursor` automatically.
+
+## Optimized
+
+- [#7258](https://github.com/hyperf/hyperf/pull/7258) Optimized code for reading package data from `composer.lock`.
+- [#7276](https://github.com/hyperf/hyperf/pull/7276) Replaced `get_called_class` with `static::class`.
+
+# v3.1.50 - 2025-01-09
+
+## Fixed
+
+- [#7231](https://github.com/hyperf/hyperf/pull/7231) Fixed fatal exception "Object of class ... could not be converted to string" when using invalid websocket message handler.
+
+## Added
+
+- [#7224](https://github.com/hyperf/hyperf/pull/7224) Added `Hyperf\Coroutine\Mutex`.
+- [#7233](https://github.com/hyperf/hyperf/pull/7233) Added params `connection_name` which used to define amqp connection name.
+
+## Optimized
+
+- [#7223](https://github.com/hyperf/hyperf/pull/7223) Optimized code for reading extra data from `composer.lock`.
+- [#7227](https://github.com/hyperf/hyperf/pull/7227) Improves phpstan docs for `Hyperf\Support\SafeCaller`.
+
+# v3.1.49 - 2024-12-17
+
+## Added
+
+- [#7219](https://github.com/hyperf/hyperf/pull/) Added case sensitivity option to `Hyperf\Stringable\Str::is()`.
+
+## Optimized
+
+- [#7206](https://github.com/hyperf/hyperf/pull/7206) Support `swoole` version `6.0`.
+- [#7209](https://github.com/hyperf/hyperf/pull/7209) Optimized collection usage in `getUrlRange` method.
+
+# v3.1.48 - 2024-12-12
+
+## Optimized
+
+- [#7194](https://github.com/hyperf/hyperf/pull/7194) Optimized the database exception to implement unique constraint error detection.
+- [#7187](https://github.com/hyperf/hyperf/pull/7187) Allow request IP retrieval during tests via server parameters.
+
+## Fixed
+
+- [#7188](https://github.com/hyperf/hyperf/pull/7188) Fixed bug that `Hyperf\HttpMessage\Server\ResponsePlusProxy` cannot support another responses without `getCookies`.
+
+## Added
+
+- [#7192](https://github.com/hyperf/hyperf/pull/7192) Added `Hyperf\Database\Model\Collection::findOrFail()`.
+
+# v3.1.47 - 2024-11-28
+
+## Fixed
+
+- [#7176](https://github.com/hyperf/hyperf/pull/7176) Fixed bug that cookies cannot work when using `swow`.
+
+# v3.1.46 - 2024-11-21
+
+## Added
+
+- [#7148](https://github.com/hyperf/hyperf/pull/7148) Added `exclude` rules for `hyperf/validation`.
+- [#7150](https://github.com/hyperf/hyperf/pull/7150) Added missing methods (`accepted_if`, `ascii`, `date_equals`...) to validation messages.
+- [#7151](https://github.com/hyperf/hyperf/pull/7151) Added hooks `beforeTestInCoroutine` and `afterTestInCoroutine` for `Hyperf\Testing\Concerns\RunTestsInCoroutine::runTestsInCoroutine()`.
+- [#7156](https://github.com/hyperf/hyperf/pull/7156) Added method `Hyperf\Database\Schema\Blueprint::engine()`.
+
+# v3.1.45 - 2024-11-14
+
+## Added
+
+- [#7141](https://github.com/hyperf/hyperf/pull/7141) Added method `Hyperf\Collection\Arr::shuffleAssoc`.
+- [#7143](https://github.com/hyperf/hyperf/pull/7143) Added method `Hyperf\Database\Model\Builder::findOr`.
+- [#7147](https://github.com/hyperf/hyperf/pull/7147) Added `setVisible` and `setHidden` into `Model\Collection`.
+- [#7149](https://github.com/hyperf/hyperf/pull/7149) Support to define `servers` and `info` for `swagger`.
+
+## Fixed
+
+- [#7133](https://github.com/hyperf/hyperf/pull/7133) Fixed bug that the connection of migrations cannot work excepted.
+
+# v3.1.44 - 2024-10-24
 
 ## Added
 
@@ -6,6 +183,10 @@
 - [#7070](https://github.com/hyperf/hyperf/pull/7070) Added `Blueprint::charset()` and `Blueprint::collation()`.
 - [#7071](https://github.com/hyperf/hyperf/pull/7071) Added `Hyperf\Database\Schema\Blueprint::tinyText()`.
 - [#7110](https://github.com/hyperf/hyperf/pull/7110) Added support for disallowing class morphs.
+
+## Fixed
+
+- [#7124](https://github.com/hyperf/hyperf/pull/7124) Fixed bug that `sortByMany` value is null when using `SORT_NATURAL`.
 
 # v3.1.43 - 2024-10-10
 

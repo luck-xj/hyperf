@@ -170,7 +170,7 @@ class CollectionTest extends TestCase
 
     public function testHasAny(): void
     {
-        $col = new Collection(['id' => 1, 'first' => 'Hello', 'second' => 'World']);
+        $col = new Collection(['id' => 1, 'first' => 'Hello', 'second' => 'World', 'null' => null]);
 
         $this->assertTrue($col->hasAny('first'));
         $this->assertFalse($col->hasAny('third'));
@@ -178,6 +178,7 @@ class CollectionTest extends TestCase
         $this->assertTrue($col->hasAny(['first', 'fourth']));
         $this->assertFalse($col->hasAny(['third', 'fourth']));
         $this->assertFalse($col->hasAny('third', 'fourth'));
+        $this->assertFalse($col->hasAny('null'));
         $this->assertFalse($col->hasAny([]));
     }
 
@@ -1341,5 +1342,16 @@ class CollectionTest extends TestCase
             'd' => ['id' => 4, 'name' => 'd'],
             'e' => ['id' => 5, 'name' => 'e'],
         ]), (string) $dataMany);
+
+        $dataManyNull = (new $collection(
+            [
+                ['id' => 2, 'name' => 'b'],
+                ['id' => 1, 'name' => null],
+            ]
+        ))->sortBy([['id', 'desc'], ['name', 'desc']], SORT_NATURAL);
+        $this->assertEquals(json_encode([
+            ['id' => 2, 'name' => 'b'],
+            ['id' => 1, 'name' => null],
+        ]), json_encode($dataManyNull));
     }
 }
