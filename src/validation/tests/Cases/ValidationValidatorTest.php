@@ -37,6 +37,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
+use Stringable;
 
 /**
  * @internal
@@ -2856,16 +2857,16 @@ class ValidationValidatorTest extends TestCase
         $v = new Validator($trans, ['x' => ['not a string']], ['x' => 'Email']);
         $this->assertFalse($v->passes());
 
-        $v = new Validator($trans, ['x' => new class {
-            public function __toString()
+        $v = new Validator($trans, ['x' => new class implements Stringable {
+            public function __toString(): string
             {
                 return 'aslsdlks';
             }
         }], ['x' => 'Email']);
         $this->assertFalse($v->passes());
 
-        $v = new Validator($trans, ['x' => new class {
-            public function __toString()
+        $v = new Validator($trans, ['x' => new class implements Stringable {
+            public function __toString(): string
             {
                 return 'foo@gmail.com';
             }
@@ -2891,17 +2892,6 @@ class ValidationValidatorTest extends TestCase
         $trans = $this->getIlluminateArrayTranslator();
         $v = new Validator($trans, ['x' => $validUrl], ['x' => 'Url']);
         $this->assertTrue($v->passes());
-    }
-
-    /**
-     * @param mixed $invalidUrl
-     */
-    #[DataProvider('invalidUrls')]
-    public function testValidateUrlWithInvalidUrls($invalidUrl)
-    {
-        $trans = $this->getIlluminateArrayTranslator();
-        $v = new Validator($trans, ['x' => $invalidUrl], ['x' => 'Url']);
-        $this->assertFalse($v->passes());
     }
 
     public static function validUrls()
@@ -3144,6 +3134,17 @@ class ValidationValidatorTest extends TestCase
             ['https://laravel.com#fragment'],
             ['https://laravel.com/#fragment'],
         ];
+    }
+
+    /**
+     * @param mixed $invalidUrl
+     */
+    #[DataProvider('invalidUrls')]
+    public function testValidateUrlWithInvalidUrls($invalidUrl)
+    {
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['x' => $invalidUrl], ['x' => 'Url']);
+        $this->assertFalse($v->passes());
     }
 
     public static function invalidUrls()
@@ -5299,17 +5300,6 @@ class ValidationValidatorTest extends TestCase
         $this->assertTrue($v->passes());
     }
 
-    /**
-     * @param mixed $uuid
-     */
-    #[DataProvider('invalidUuidList')]
-    public function testValidateWithInvalidUuid($uuid)
-    {
-        $trans = $this->getIlluminateArrayTranslator();
-        $v = new Validator($trans, ['foo' => $uuid], ['foo' => 'uuid']);
-        $this->assertFalse($v->passes());
-    }
-
     public static function validUuidList()
     {
         return [
@@ -5324,6 +5314,17 @@ class ValidationValidatorTest extends TestCase
             ['ff6f8cb0-c57d-51e1-9b21-0800200c9a66'],
             ['FF6F8CB0-C57D-11E1-9B21-0800200C9A66'],
         ];
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    #[DataProvider('invalidUuidList')]
+    public function testValidateWithInvalidUuid($uuid)
+    {
+        $trans = $this->getIlluminateArrayTranslator();
+        $v = new Validator($trans, ['foo' => $uuid], ['foo' => 'uuid']);
+        $this->assertFalse($v->passes());
     }
 
     public static function invalidUuidList()
